@@ -8,8 +8,8 @@ vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
 -- auto install treesitter parsers
+lvim.builtin.treesitter.ensure_installed = { "cpp", "c", "python", "javascript"}
 lvim.builtin.treesitter.highlight.enable = true
-lvim.builtin.treesitter.ensure_installed = { "cpp", "c", "python" }
 
 -- install plugins
 lvim.plugins = {
@@ -58,11 +58,30 @@ lvim.plugins = {
             handlers = {}
         },
     },
+    {
+        "windwp/nvim-ts-autotag",
+        -- Use the config function to set it up immediately
+        config = function()
+          require("nvim-ts-autotag").setup()
+        end,
+        -- You can optionally lazy-load on insert mode:
+        event = "InsertEnter",
+    }
 }
 
--- color scheme
+-- frontend treesitter parsers (syntax highlighting)
+vim.list_extend(lvim.builtin.treesitter.ensure_installed, {
+  "javascript",
+  "typescript",
+  "tsx",
+  "json",
+  "css",
+  "html",
+})
+
+-- color theme
 require("tokyonight").setup({})
-lvim.colorscheme = "tokyonight-storm"
+lvim.colorscheme = "slate"
 
 -- Leap setup
 require('leap').create_default_mappings()
@@ -77,7 +96,7 @@ require("lvim.lsp.manager").setup("markdown-preview")
 
 local lspconfig = require("lspconfig")
 lspconfig.clangd.setup({
-  cmd = { "clangd", "--offset-encoding=utf-16" },
+  cmd = { "clangd", "--offset-encoding=utf-16", "--std=c++20" },
   -- Include any other settings you want for clangd here
   on_attach = lvim.lsp.on_attach,
   capabilities = lvim.lsp.capabilities,
@@ -91,7 +110,7 @@ formatters.setup {
     {
         name = "clang_format",
         filetypes = { "cpp", "hpp", "cc", "h", "cxx", "hxx" },
-        extra_args = { "—filter", "-legal/copyright" }
+        -- extra_args = { "—filter", "-legal/copyright" }
     }
     --TODO: setup JS linter
 }
@@ -159,10 +178,17 @@ local function open_nvim_tree()
 end
 vim.api.nvim_create_autocmd({ "VimEnter" }, { callback = open_nvim_tree })
 
+-- Configure nvim-tree to NOT sync with Neovim's current working directory
+lvim.builtin.nvimtree.setup.sync_root_with_cwd = false
+lvim.builtin.nvimtree.setup.update_cwd = false
+lvim.builtin.nvimtree.setup.respect_buf_cwd = false
 
 -- Filter out shit from nvim-tree
 lvim.builtin.nvimtree.setup.filters.custom = { "node_modules", "\\.cache", "lv-settings.lua",
     ".git", "*.pyc", "pyrightconfig.json", "__pycache__", ".mypy_cache", ".DS_store", "*.o" }
+
+-- Map 'L' in normal mode to :NvimTreeCollapse
+vim.keymap.set('n', 'L', ':NvimTreeCollapse<CR>', { noremap = true, silent = true })
 
 -- Filter out shit from telescope
 lvim.builtin.telescope.defaults.file_ignore_patterns = {
